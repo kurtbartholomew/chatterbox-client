@@ -2,11 +2,11 @@ module.exports = function(grunt) {
   grunt.initConfig({
     //pkg: grunt.file.readJSON('package.json'),
     jshint: {
-      files: ['Gruntfile.js', 'js/*.js']
+      files: ['Gruntfile.js', 'client/scripts/*.js']
     },
     watch: {
       scripts: {
-        files: ['Gruntfile.js','js/*.js'],
+        files: ['Gruntfile.js','client/scripts/*.js'],
         tasks: 'jshint',
         options : {
           livereload: true
@@ -15,13 +15,13 @@ module.exports = function(grunt) {
         }
       },
       css: {
-        files: ['css/*.css'],
+        files: ['client/styles/*.css'],
         options : {
           livereload: true
         }
       },
       html: {
-        files: ['*.html'],
+        files: ['client/*.html'],
         options : {
           livereload: true
         }
