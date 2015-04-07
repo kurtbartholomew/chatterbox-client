@@ -4,7 +4,10 @@ var message = {
   'roomname': '4chan'
 };
 
-var displayMessage = function(data) {
+window.lastAddedAt = 0;
+window.intervalExists = undefined;
+
+var displayMessage = function(data, isAppend) {
    var container = $('.container');
   _.each(data, function(messageObj) {
     var $msg = $('<div class="chat" data-id="' + messageObj.objectId +
@@ -14,7 +17,11 @@ var displayMessage = function(data) {
     '<div class="time-updated" data-updated-at ="' + messageObj.updatedAt +
     '">' + messageObj.updatedAt + '</div>' +
     '</div>');
-    container.append($msg);
+    if(isAppend) {
+      container.append($msg);
+    } else {
+      container.prepend($msg);
+    }
   });
 };
 
@@ -40,10 +47,32 @@ var getMessages = function(){
   $.ajax({
     url: 'https://api.parse.com/1/classes/chatterbox',
     type: 'GET',
+    data: {limit:50,order:'-createdAt'},
     contentType: 'application/json',
     success: function (data) {
-      displayMessage(data.results);
-   //   $('.container').append(JSON.stringify(data));
+      window.lastAddedAt = data.results[data.results.length-1].createdAt;
+      displayMessage(data.results, false);
+      console.log(data);
+      console.log('chatterbox: Message retrieved');
+      if(!intervalExists){
+        window.intervalExists = setInterval(getNewMessages,1000);
+      }
+    },
+    error: function(data) {
+      console.error('chatterbox: Message NOT retrieved');
+    }
+  });
+};
+
+var getNewMessages = function(){
+  $.ajax({
+    url: 'https://api.parse.com/1/classes/chatterbox',
+    type: 'GET',
+    data: {where:{'createdAt':{"$gte":lastAddedAt}}},
+    contentType: 'application/json',
+    success: function (data) {
+      window.lastAddedAt = data.results[data.results.length-1].createdAt;
+      displayMessage(data.results, true);
       console.log(data);
       console.log('chatterbox: Message retrieved');
     },
@@ -52,6 +81,7 @@ var getMessages = function(){
     }
   });
 };
+
 
 $(".getMsg").click(getMessages);
 $(".sendMsg").click(sendMessage);
