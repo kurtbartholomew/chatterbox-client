@@ -1,4 +1,4 @@
-var message = {
+var othermessage = {
   'username': 'shawndrost',
   'text': 'trololo',
   'roomname': '4chan'
@@ -26,8 +26,12 @@ var displayMessage = function(data, isAppend) {
   });
 };
 
+var submitMessage = function(){
 
-var sendMessage = function(){
+};
+
+
+var sendMessage = function(message){
   $.ajax({
     // always use this url
     url: 'https://api.parse.com/1/classes/chatterbox',
@@ -48,7 +52,7 @@ var getMessages = function(){
   $.ajax({
     url: 'https://api.parse.com/1/classes/chatterbox',
     type: 'GET',
-    data: {limit:50,order:'-createdAt'},
+    data: {limit:20,order:'-createdAt'},
     contentType: 'application/json',
     success: function (data) {
       window.lastAddedAt = data.results[data.results.length-1].createdAt;
@@ -72,6 +76,7 @@ var getNewMessages = function(){
     data: {where:{'createdAt':{"$gt":lastAddedAt}}},
     contentType: 'application/json',
     success: function (data) {
+      console.log("checking");
       if(data.results.length > 0) {
         window.lastAddedAt = data.results[data.results.length-1].createdAt;
         displayMessage(data.results, true);
@@ -88,3 +93,15 @@ var getNewMessages = function(){
 
 $(".getMsg").click(getMessages);
 $(".sendMsg").click(sendMessage);
+$("#input-form").submit(function(e){
+  //console.log($(this).serialize);
+  var message = {
+    'username': "fsdfdsfds",
+    'text': document.getElementsByTagName('input')[0].value,
+    'roomname': 'lobby'
+  };
+  document.getElementsByTagName('input')[0].value = "";
+  console.log(message);
+  sendMessage(message);
+  e.preventDefault();
+});
