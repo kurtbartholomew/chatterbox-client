@@ -1,4 +1,4 @@
-// TODO: NEED TO place rooms in a select box. 
+// TODO: NEED TO place rooms in a select box.
 // Selecting join will call app.init()
 // Need to connect display messages and getnewmessages
 // with the refactored settings
@@ -9,24 +9,59 @@ window.chatWindow = $('#chats');
 window.friends = {};
 window.rooms = {lobby:'lobby'};
 
-$("#send").hide();
+var sanitizeData = function(inputText) {
+  if (inputText === null || inputText === undefined) {
+    return "";
+  }
+  return inputText
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+};
 
 var app = {};
 
+app.joinRoom = function(room){
+  console.log(room);
+  app.clearMessages();
+  $('#send').show();
+
+  app.fetch({where:{'roomname':room}}, { recurring:true });
+
+//setInterval( function(){       })
+
+};
+
 app.init = function(){
 
-  $('#send').show();
+  app.getRooms();
   // add an onclick handler to chat window for friending
+  $("#send").hide();
+  $(".join-room").on('click', function(e){
+    app.joinRoom($('#roomSelect option:selected').val());
+    e.preventDefault();
+  });
+
   chatWindow.on('click','a', function(e){
     e.preventDefault();
     app.addFriend(e.target);
   });
+
+
 
   // add an onsubmit handler to handle chat message submission
   $("#send").submit(function(e){
     e.preventDefault();
     app.handleSubmit();
   });
+
+
+  // **************************** Added recently
+   app.joinRoom($('#roomSelect option:selected').val());
+  // setInterval( function() { app.fetch({where:{'roomname':$('#roomSelect option:selected').val()}}, { recurring:true }); }, 10000);
+
 };
 
 app.send = function(message){
@@ -44,7 +79,7 @@ app.send = function(message){
   });
 };
 
-app.fetch = function(options){
+app.fetch = function(options, displayOptions){
   options = options || {};
   $.ajax({
     url: 'https://api.parse.com/1/classes/chatterbox',
@@ -52,8 +87,8 @@ app.fetch = function(options){
     data: options,
     contentType: 'application/json',
     success: function (data) {
-      console.error('chatterbox: Messages retrieved');
-      displayMessage(data);
+      console.log('chatterbox: Messages retrieved');
+      displayMessage(data.results, displayOptions );
     },
     error: function(data) {
       console.error('chatterbox: Messages NOT retrieved');
@@ -74,7 +109,7 @@ app.addMessage = function(messageObj) {
 };
 
 app.addRoom = function(roomName) {
-  $('#roomSelect').append('<span>'+roomName+'</span>');
+  $('#roomSelect').append('<option value="'+roomName+'">'+roomName+'</option>');
 };
 
 app.addFriend = function(domNode) {
@@ -88,21 +123,60 @@ app.handleSubmit = function() {
   var message = {
     'username': "fsdfdsfds",
     'text': $currentMessage.val(),
-    'roomname': 'lobby'
+    'roomname': $('#roomSelect option:selected').val()
   };
   $currentMessage.val('');
   console.log(message);
   app.send(message);
 };
 
-var displayMessage = function(data, isAppend) {
+app.getRooms = function() {
+  $.ajax({
+    url: 'https://api.parse.com/1/classes/chatterbox',
+    type: 'GET',
+    data: {limit:100, order:'-createdAt', keys:'roomname'},
+    contentType: 'application/json',
+    success: function (data) {
+      console.log('Got Rooms');
+      app.populateRooms(data.results);
+    },
+    error: function(data) {
+      console.error('chatterbox: Message NOT retrieved');
+    }
+  });
+};
+
+app.populateRooms = function(roomData) {
+
+  var roomsD = roomData.map(function(object){
+    return object.roomname;
+  });
+
+  for(var i = 0; i < roomsD.length; i++) {
+    if(roomsD[i] !== undefined  && roomsD[i] !== null  && roomsD[i] !== "" && roomsD[i].indexOf('script') < 0){
+      var currentRoom =  sanitizeData(roomsD[i]);
+      rooms[currentRoom] = currentRoom;
+    }
+  }
+  _.each(rooms,function(room){
+    app.addRoom(room);
+  });
+};
+
+app.init();
+
+//////////////////////////////////////////////////////////////
+
+var displayMessage = function(data, displayOptions) {
   _.each(data, function(messageObj) {
-    var $msg = $('<div class="chat" data-id="' + messageObj.objectId +
-     '"><div class="username"><a href="" data-username="'+messageObj.username+'">' + messageObj.username + '</a></div>' +
-    '<div class="message">'+ messageObj.text + '</div>' +
-    '<div class="time-created">' + messageObj.createdAt +'</div>' +
-    '</div>');
-    if(isAppend) {
+    var $msg = $('<div class="chat"><div class="username"><a href="" data-username="'+
+    sanitizeData(messageObj.username)+'">' + sanitizeData(messageObj.username) + '</a></div>' +
+  '<div class="message">'+ sanitizeData(messageObj.text) + '</div>' +
+  '</div>');
+    if(displayOptions.recurring) {
+      // append and remove old
+      //
+      // call
       chatWindow.append($msg);
     } else {
       chatWindow.prepend($msg);
@@ -168,11 +242,11 @@ var displayMessage = function(data, isAppend) {
 //   });
 // };
 
-var getRooms = function() {
+app.getRooms = function() {
   $.ajax({
     url: 'https://api.parse.com/1/classes/chatterbox',
     type: 'GET',
-    data: {limit:200, order:'-createdAt', keys:'roomname'},
+    data: {limit:100, order:'-createdAt', keys:'roomname'},
     contentType: 'application/json',
     success: function (data) {
       console.log('Got Rooms');
@@ -184,26 +258,20 @@ var getRooms = function() {
   });
 };
 
-var populateRooms = function(roomData) {
+app.populateRooms = function(roomData) {
 
   var roomsD = roomData.map(function(object){
     return object.roomname;
   });
   for(var i = 0; i < roomsD.length; i++) {
-    if(roomsD[i] !== undefined && roomsD[i] !== "" && roomsD[i].indexOf('script') < 0){
+    if(roomsD[i] !== undefined  && roomsD[i] !== null  && roomsD[i] !== "" && roomsD[i].indexOf('script') < 0){
       var currentRoom =  sanitizeData(roomsD[i]);
       rooms[currentRoom] = currentRoom;
     }
   }
-};
-
-var sanitizeData = function(inputText) {
-  return inputText
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  _.each(rooms,function(room){
+    app.addRoom(room);
+  });
 };
 
 
