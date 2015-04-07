@@ -10,11 +10,12 @@ app.init = function(){};
 window.lastAddedAt = 0;
 window.intervalExists = undefined;
 window.chatWindow = $('#container');
+window.friends = {};
 
 var displayMessage = function(data, isAppend) {
   _.each(data, function(messageObj) {
     var $msg = $('<div class="chat" data-id="' + messageObj.objectId +
-     '"><div class="username">' + messageObj.username + '</div>' +
+     '"><div class="username"><a href="" data-username="'+messageObj.username+'">' + messageObj.username + '</a></div>' +
     '<div class="message">'+ messageObj.text + '</div>' +
     '<div class="time-created">' + messageObj.createdAt +'</div>' +
     '</div>');
@@ -76,7 +77,6 @@ var getNewMessages = function(){
     data: {where:{'createdAt':{"$gt":lastAddedAt}}},
     contentType: 'application/json',
     success: function (data) {
-      console.log("checking");
       if(data.results.length > 0) {
         window.lastAddedAt = data.results[data.results.length-1].createdAt;
         displayMessage(data.results, true);
@@ -94,7 +94,6 @@ var getNewMessages = function(){
 $(".getMsg").click(getMessages);
 $(".sendMsg").click(sendMessage);
 $("#input-form").submit(function(e){
-  //console.log($(this).serialize);
   var message = {
     'username': "fsdfdsfds",
     'text': document.getElementsByTagName('input')[0].value,
@@ -104,4 +103,10 @@ $("#input-form").submit(function(e){
   console.log(message);
   sendMessage(message);
   e.preventDefault();
+});
+chatWindow.on('click','a', function(e){
+  e.preventDefault();
+  console.log(e.target);
+  var username = $(e.target).data('username');
+  friends[username] = username;
 });
