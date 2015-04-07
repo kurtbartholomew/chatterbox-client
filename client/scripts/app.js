@@ -6,11 +6,14 @@ var othermessage = {
 
 var app = {};
 app.init = function(){};
+app.send = function(){};
+
 
 window.lastAddedAt = 0;
 window.intervalExists = undefined;
 window.chatWindow = $('#container');
 window.friends = {};
+window.rooms = {lobby:'lobby'};
 
 var displayMessage = function(data, isAppend) {
   _.each(data, function(messageObj) {
@@ -27,9 +30,7 @@ var displayMessage = function(data, isAppend) {
   });
 };
 
-var submitMessage = function(){
-
-};
+var submitMessage = function(){};
 
 
 var sendMessage = function(message){
@@ -90,9 +91,48 @@ var getNewMessages = function(){
   });
 };
 
+var getRooms = function() {
+  $.ajax({
+    url: 'https://api.parse.com/1/classes/chatterbox',
+    type: 'GET',
+    data: {limit:200, order:'-createdAt', keys:'roomname'},
+    contentType: 'application/json',
+    success: function (data) {
+      console.log('Got Rooms');
+      populateRooms(data.results);
+    },
+    error: function(data) {
+      console.error('chatterbox: Message NOT retrieved');
+    }
+  });
+};
+
+var populateRooms = function(roomData) {
+
+  var roomsD = roomData.map(function(object){
+    return object.roomname;
+  });
+  for(var i = 0; i < roomsD.length; i++) {
+    if(roomsD[i] !== undefined && roomsD[i] !== "" && roomsD[i].indexOf('script') < 0){
+      var currentRoom =  sanitizeData(roomsD[i]);
+      rooms[currentRoom] = currentRoom;
+    }
+  }
+};
+
+var sanitizeData = function(inputText) {
+  return inputText
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+};
+
 
 $(".getMsg").click(getMessages);
 $(".sendMsg").click(sendMessage);
+
 $("#input-form").submit(function(e){
   var message = {
     'username': "fsdfdsfds",
@@ -104,6 +144,7 @@ $("#input-form").submit(function(e){
   sendMessage(message);
   e.preventDefault();
 });
+
 chatWindow.on('click','a', function(e){
   e.preventDefault();
   console.log(e.target);
