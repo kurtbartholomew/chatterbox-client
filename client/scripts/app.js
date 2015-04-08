@@ -1,3 +1,6 @@
+
+
+
 window.lastAddedAt = 0;
 window.intervalExists = undefined;
 window.chatWindow = $('#chats');
