@@ -39,5 +39,13 @@
     </div>
   <!--  <script src="scripts/app.js"></script> -->
   <script type="text/javascript" src="scripts/app-backbone.js"></script>
+  <script type="text/javascript">
+    $(function(){
+      var messages = new Messages();
+      var messagesView = new MessagesView({el: $("#chats"), collection:messages});
+      messages.loadMessages();
+
+    });
+  </script>
   </body>
 </html>
