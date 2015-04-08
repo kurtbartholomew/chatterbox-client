@@ -53,5 +53,7 @@ var MessagesView = Backbone.View.extend({
 });
 
 var FormView = Backbone.View.extend({
-
+  handleSubmit: function(e) {
+    var message =
+  }
 });
